@@ -1,0 +1,48 @@
+# 忽略编译产生的文件和目录
+*.pyc
+*.pyo
+__pycache__/
+
+# 忽略IDE生成的文件和目录
+.idea/
+.vscode/
+
+# 忽略依赖管理工具产生的目录
+venv/
+env/
+node_modules/
+
+# 忽略日志文件
+*.log
+
+# 忽略临时文件
+*.tmp
+*.swp
+
+# 忽略敏感信息配置文件
+config.ini
+secrets.ini
+
+# 忽略数据文件
+data/
+
+# 忽略编译输出
+build/
+dist/
+
+# 忽略文档生成输出
+docs/_build/
+
+# 忽略缓存文件
+.cache/
+
+# 忽略执行结果文件
+results/
+
+# 忽略生成的报告文件
+reports/
+
+# 忽略备份文件
+*.bak
+*.backup
+*.old
