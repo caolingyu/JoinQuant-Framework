@@ -8,8 +8,8 @@ import numpy as np
 import akshare as ak
 import math
 
-from backtesting_framework import *
-from strategy_development import *
+from src.backtesting_framework.portfolio_management import *
+# from src.strategy_development import *
 
 
 # 全局变量用
@@ -19,7 +19,6 @@ class G:
 
 # 全局变量用
 g = G()
-
 
 
 # 上下文数据

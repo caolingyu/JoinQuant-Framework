@@ -8,8 +8,8 @@ import numpy as np
 import akshare as ak
 import math
 
-from backtesting_framework import *
-from strategy_development import *
+from src.backtesting_framework import *
+from src.strategy_development import *
 
 from typing import Dict, List
 import datetime
@@ -76,25 +76,33 @@ def run():
     # 图形中文显示， Matplotlib 默认情况不支持中文
     # zhfont1 = matplotlib.font_manager.FontProperties(fname="SourceHanSansSC-Bold.otf")
 
+    # 设置中文字体
+    # plt.rcParams['font.sans-serif'] = ['SimHei']
+    # plt.rcParams['axes.unicode_minus'] = False
+
     # 收益率
     plt_df['ratio'] = (plt_df['value'] - init_value) / init_value
     bm_df = attribute_daterange_history(context.benchmark, context.start_date, context.end_date)
     bm_init = bm_df['open'][0]
     # 基准收益率
     plt_df['benckmark_ratio'] = (bm_df['open'] - bm_init) / bm_init
-    plt.title("python简单量化框架")
+    plt.title("Performance Report")
     # 绘制收益率曲线
     plt.plot(plt_df['ratio'], label="ratio")
     # 绘制基准收益率曲线
     plt.plot(plt_df['benckmark_ratio'], label="benckmark_ratio")
     # fontproperties 设置中文显示用字体，fontsize 设置字体大小
-    plt.xlabel("日期")
-    plt.ylabel("收益率")
+    plt.xlabel("Date")
+    plt.ylabel("Yield")
     # x坐标斜率
     plt.xticks(rotation=46)
     # 添加图注
     plt.legend()
+    # 保存图片
+    now_time = time.strftime("%Y%m%d%H%M%S")
+    plt.savefig(f"img/{now_time}.png")
     # 显示
     plt.show()
+
 
 run()
