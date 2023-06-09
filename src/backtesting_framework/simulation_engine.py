@@ -9,84 +9,15 @@ import akshare as ak
 import math
 
 from src.backtesting_framework.portfolio_management import *
+from src.backtesting_framework.context import *
+from src.data_processing import *
+
 # from src.strategy_development import *
-
-
-# 全局变量用
-class G:
-    pass
-
-
-# 全局变量用
-g = G()
-
-
-# 上下文数据
-class Context:
-    def __init__(self, cash, start_date, end_date):
-        # 资金
-        self.cash = cash
-        # 开始时间
-        self.start_date = start_date
-        # 结束时间
-        self.end_date = end_date
-        # 持仓标的信息
-        self.positions = {}
-        # 基准
-        self.benchmark = None
-        # 交易日期
-        self.date_range = trade_cal[(trade_cal['trade_date'] >= start_date) &
-                                    (trade_cal['trade_date'] <= end_date)]['trade_date'].values
-        # 回测今天日期
-        self.dt = dateutil.parser.parse(start_date)
-        # self.portfolio = Portfolio()
-        self.portfolio = Portfolio(0.0, 10000.0, 10000.0, 0.0, {}, 0.0, 10000.0, 0.0)
+# from src.data_processing import *
 
 
 
 
-# 获取各大交易所交易日历数据
-def ak_trade_cal():
-    df = ak.tool_trade_date_hist_sina()
-    # print(df)
-    # 转换为日期格式
-    df['trade_date'] = pd.to_datetime(df['trade_date'])
-    # 设置'trade_date'为索引
-    # df.set_index('trade_date', inplace=True)
-    # 存储为csv文件
-    # df.to_csv('./trade_cal.csv')
-    return df
-
-# 下载并保存交易日历数据
-trade_cal = ak_trade_cal()
-
-
-# 实例化上下文数据Context
-context = Context(cash=100000, start_date='2023-01-01', end_date='2023-06-01')
-
-
-def ak_daily(security, start_date, end_date, fields=('open', 'close', 'high', 'low', 'volume')):
-    # print('security', security)
-    # print('start_date', start_date)
-    # print('end_date', end_date)
-
-    # df = ak.stock_zh_a_daily(symbol=security, start_date=start_date, end_date=end_date, adjust="qfq")
-    df = ak.fund_etf_hist_em(symbol=security, start_date=start_date, end_date=end_date, adjust='qfq').rename(
-        columns={
-            "日期": "date",
-            "开盘": "open",
-            "收盘": "close",
-            "最高": "high",
-            "最低": "low",
-            "成交量": "volume",
-        }
-    )
-
-    # 转换为日期格式
-    df['date'] = pd.to_datetime(df['date'])
-    # 设置'date'为索引
-    df.set_index('date', inplace=True)
-    return df[list(fields)]
 
 
 
@@ -95,52 +26,6 @@ def set_bench_mark(security):
     context.benchmark = security
 
 
-# 获取历史数据
-def attribute_history(security, count, fields=('open', 'close', 'high', 'low', 'volume')):
-    end_date = (context.dt - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-    start_date = trade_cal[(trade_cal['trade_date'] <= end_date)][-count:].iloc[0, :][
-        'trade_date'].strftime('%Y-%m-%d')
-    return attribute_daterange_history(security, start_date, end_date, fields)
-
-
-# 获取历史数据基础函数
-def attribute_daterange_history(security, start_date, end_date, fields=('open', 'close', 'high', 'low', 'volume')):
-    # 尝试读取本地数据
-    # 2022-10-18 转换为 20221018
-    time_array1 = time.strptime(start_date, '%Y-%m-%d')
-    start_date = time.strftime('%Y%m%d', time_array1)
-    time_array2 = time.strptime(end_date, '%Y-%m-%d')
-    end_date = time.strftime('%Y%m%d', time_array2)
-    df = ak_daily(security, start_date, end_date)
-
-    return df[list(fields)]
-
-
-# 今天日线行情
-def get_today_data(security, fields=('open', 'close', 'high', 'low', 'volume')):
-    today = context.dt.strftime('%Y%m%d')
-    # df = ak.stock_zh_a_daily(symbol=security, start_date=today, end_date=today, adjust="qfq")
-    df = ak.fund_etf_hist_em(symbol=security, start_date=today, end_date=today, adjust='qfq').rename(
-        columns={
-            "日期": "date",
-            "开盘": "open",
-            "收盘": "close",
-            "最高": "high",
-            "最低": "low",
-            "成交量": "volume",
-        }
-    )
-    # print('today_df', df.head())
-    # 转换为日期格式
-    df['date'] = pd.to_datetime(df['date'])
-    # 设置'date'为索引
-    df.set_index('date', inplace=True)
-    return df[list(fields)]
-
-
-# def get_realtime_quotes():
-#     data = ak.stock_zh_a_spot_em()
-#     return data
 
 
 # 买卖订单基础函数
@@ -212,4 +97,3 @@ def order_target_value(security, value):
     print('delta_value', delta_value)
 
     order_value(security, delta_value)
-
