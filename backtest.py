@@ -10,15 +10,20 @@ from src.data_processing import *
 
 # 定义手续费和滑点
 config = {
-    'commission_rate': 2.5 / 10000,  # 手续费
-    'slippage': 0.01  # 滑点
+    'commission_rate': 3 / 10000,  # 手续费
+    'slippage': 0.001  # 滑点
 }
 
 # 初始化函数，设定基准等等
 def initialize(context):
     # 设定002624作为基准
     set_bench_mark('159919')
-    g.stock_pool = ['159919', '510500', '159915', '513100']
+    # 510180 上证180
+    # 159919 沪深300
+    # 159922 中证500
+    # 159915 创业板
+    # 513100 纳指
+    g.stock_pool = ['510180', '159915', '513100', '159922']
     g.stock_num = 1 #买入评分最高的前stock_num只股票
     g.momentum_day = 29 #最新动量参考最近momentum_day的
 

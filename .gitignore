@@ -48,3 +48,5 @@ reports/
 *.old
 
 img
+notebooks
+.env

@@ -1,39 +1,63 @@
+import os
 import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import akshare as ak
+import requests
+
+from dotenv import load_dotenv
 
 from src.backtesting_framework import *
 from src.strategy_development import *
 from src.data_processing import *
 
-# 定义手续费和滑点
+# Load environment variables from .env file
+load_dotenv()
+
+# Define commission rate and slippage
 config = {
-    'commission_rate': 2.5 / 10000,  # 手续费
-    'slippage': 0.01  # 滑点
+    'commission_rate': 2.5 / 10000,  # Commission rate
+    'slippage': 0.01  # Slippage
 }
 
-# 初始化函数，设定基准等等
+# Initialize function, set benchmark, etc.
 def initialize(context):
-    # 设定002624作为基准
+    # Set '159919' as the benchmark
     set_bench_mark('159919')
     g.stock_pool = ['159919', '510500', '159915', '513100']
-    g.stock_num = 1 #买入评分最高的前stock_num只股票
-    g.momentum_day = 29 #最新动量参考最近momentum_day的
+    g.stock_num = 1  # Buy the top stock_num stocks based on the score
+    g.momentum_day = 29  # Latest momentum reference for the last momentum_day days
 
-    #rsrs择时参数
-    g.ref_stock = '159919' #用ref_stock做择时计算的基础数据
-    g.N = 18 # 计算最新斜率slope，拟合度r2参考最近N天
-    g.M = 600 # 计算最新标准分zscore，rsrs_score参考最近M天
-    g.score_threshold = 0.7 # rsrs标准分指标阈值
-    #ma择时参数
-    g.mean_day = 20 #计算结束ma收盘价，参考最近mean_day
-    g.mean_diff_day = 3 #计算初始ma收盘价，参考(mean_day + mean_diff_day)天前，窗口为mean_diff_day的一段时间
-    g.slope_series = initial_slope_series()[:-1] # 除去回测第一天的slope，避免运行时重复加入
+    # rsrs timing parameters
+    g.ref_stock = '159919'  # Basic data for rsrs timing calculation using ref_stock
+    g.N = 18  # Calculate the latest slope and R-squared based on the last N days
+    g.M = 600  # Calculate the latest z-score based on the last M days
+    g.score_threshold = 0.7  # rsrs z-score threshold
+    # ma timing parameters
+    g.mean_day = 20  # Calculate the closing price based on the last mean_day
+    g.mean_diff_day = 3  # Calculate the initial closing price based on (mean_day + mean_diff_day) days ago with a window of mean_diff_day
+    g.slope_series = initial_slope_series()[:-1]  # Exclude the slope for the first day of backtesting to avoid duplicate addition during runtime
 
+# Function to send a Bark notification
+def send_bark_notification(title, content):
+    bark_url = f"https://api.day.app/{os.getenv('BARK_API_KEY')}"  # Replace YOUR_BARK_KEY with your actual Bark API key
+    params = {
+        'title': title,
+        'body': content
+    }
+    response = requests.get(bark_url, params=params)
+    # You can add error handling for the response if needed
 
-# 框架主体函数
+def handle_data(context):
+    check_out_list = get_rank()
+    today_stock = '今日自选股:{}'.format(check_out_list)
+    #获取综合择时信号
+    timing_signal = get_timing_signal(g.ref_stock)
+    today_signal = '今日择时信号:{}'.format(timing_signal)
+    return f"{today_stock} {timing_signal}"
+
+# Main framework function
 def run():
     init_value = context.portfolio.available_cash
     initialize(context)
@@ -41,13 +65,13 @@ def run():
     today = datetime.date.today()
     dt = today.strftime('%Y-%m-%d')
     dt = datetime.datetime.strptime(dt, '%Y-%m-%d').date()
-    print(type(dt))
     context.dt = dt
 
-    handle_data(context)
+    reminder_content = handle_data(context)
 
-
-
+    # Example daily operation reminder
+    # if dt.weekday() < 5:  # Only execute on weekdays (Monday to Friday)
+    reminder_title = '今日策略操作'
+    send_bark_notification(reminder_title, reminder_content)
 
 run()
-
