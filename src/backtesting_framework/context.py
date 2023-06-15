@@ -63,5 +63,5 @@ class Context:
 
 
 # 实例化上下文数据Context
-context = Context(cash=100000, start_date='2023-01-18', end_date='2023-06-01')
+context = Context(cash=100000, start_date='2022-01-18', end_date='2023-06-01')
 

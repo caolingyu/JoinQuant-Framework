@@ -20,7 +20,7 @@ def ak_daily(security, start_date, end_date, fields=('open', 'close', 'high', 'l
 
     # df = ak.stock_zh_a_daily(symbol=security, start_date=start_date, end_date=end_date, adjust="qfq")
     df = ak.fund_etf_hist_em(symbol=security, start_date=start_date, end_date=end_date, adjust='qfq').rename(
-        columns={
+        columns = {
             "日期": "date",
             "开盘": "open",
             "收盘": "close",
@@ -63,7 +63,7 @@ def get_today_data(security, fields=('open', 'close', 'high', 'low', 'volume')):
     today = context.dt.strftime('%Y%m%d')
     # df = ak.stock_zh_a_daily(symbol=security, start_date=today, end_date=today, adjust="qfq")
     df = ak.fund_etf_hist_em(symbol=security, start_date=today, end_date=today, adjust='qfq').rename(
-        columns={
+        columns = {
             "日期": "date",
             "开盘": "open",
             "收盘": "close",
@@ -83,8 +83,8 @@ def get_today_data(security, fields=('open', 'close', 'high', 'low', 'volume')):
 # def get_realtime_quotes():
 #     data = ak.stock_zh_a_spot_em()
 #     return data
-import akshare
-import pandas as pd
+
+
 
 def get_price(security, start_date=None, end_date=None, frequency='daily', fields=None, fill_na=True):
     """
@@ -95,7 +95,7 @@ def get_price(security, start_date=None, end_date=None, frequency='daily', field
     :param frequency: 单位时间长度, 几天或者几分钟, 现在支持'd'（等同于'daily'）,'min'(等同于'minute')
     :param fields: 字符串list, 选择要获取的行情数据字段
     :param fill_na: 是否对缺失值进行填充，默认为True；True表示用pre_close价格填充；False 表示使用NAN填充。
-    :return: pd.DataFrame 或 pd.MultiIndex DataFrame，包含所选股票的行情数据
+    :return: pd.DataFrame 或 pd.Panel，包含所选股票的行情数据
     """
     start_date = start_date.replace('-', '')
     end_date = end_date.replace('-', '')
@@ -122,34 +122,33 @@ def get_price(security, start_date=None, end_date=None, frequency='daily', field
                         "成交量": "volume",
                     }
                 )
-                print(df)
                 df['date'] = pd.to_datetime(df['date'])
                 df.set_index('date', inplace=True)
                 df.sort_index(inplace=True)
             elif frequency == 'minute' or frequency == 'min':
-                df = akshare.stock_zh_a_minute(symbol=code, period='1', adjust='qfq', start_date=start_date, end_date=end_date)
+                df = ak.stock_zh_a_minute(symbol=code, period='1', adjust='qfq', start_date=start_date, end_date=end_date)
                 df['datetime'] = pd.to_datetime(df['datetime'])
                 df.set_index('datetime', inplace=True)
                 df.sort_index(inplace=True)
             else:
                 raise ValueError('Invalid frequency value, should be one of "d", "daily", "min", "minute".')
             
+            df['code'] = code
             if fields is not None:
+                fields.append('code')
                 df = df[fields]
-            
-            if fill_na:
-                last_close = pd.Series(df['close'].iloc[0], index=df.index[df.index < df.index[0]])
-                df['close'].fillna(last_close, inplace=True)
-                df.fillna(method='ffill', inplace=True)
             
             df_list.append(df)
         except Exception as e:
             print(f"Error fetching data for {code}: {str(e)}")
 
     if panel:
-        result = pd.concat(df_list, axis=1, keys=security)
+        result = pd.concat(df_list, axis=1)
     else:
-        result = df_list[0]
-        result.columns = [security[0] + '_' + col for col in result.columns]
+        result = pd.concat(df_list, axis=1)
+        result.columns = [col[0] for col in result.columns]
+    
+    if fill_na:
+        result.fillna(method='ffill', inplace=True)
     
     return result

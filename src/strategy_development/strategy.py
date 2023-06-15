@@ -6,6 +6,30 @@ from src.data_processing import *
 
 
 
+# 初始化函数，设定基准等等
+def initialize(context):
+    # 设定002624作为基准
+    set_bench_mark('159919')
+    # 510180 上证180
+    # 159919 沪深300
+    # 159922 中证500
+    # 159915 创业板
+    # 513100 纳指
+    g.stock_pool = ['510180', '159915', '513100', '159922']
+    g.stock_num = 1 #买入评分最高的前stock_num只股票
+    g.momentum_day = 29 #最新动量参考最近momentum_day的
+
+    #rsrs择时参数
+    g.ref_stock = '159919' #用ref_stock做择时计算的基础数据
+    g.N = 18 # 计算最新斜率slope，拟合度r2参考最近N天
+    g.M = 600 # 计算最新标准分zscore，rsrs_score参考最近M天
+    g.score_threshold = 0.7 # rsrs标准分指标阈值
+    #ma择时参数
+    g.mean_day = 20 #计算结束ma收盘价，参考最近mean_day
+    g.mean_diff_day = 3 #计算初始ma收盘价，参考(mean_day + mean_diff_day)天前，窗口为mean_diff_day的一段时间
+    g.slope_series = initial_slope_series()[:-1] # 除去回测第一天的slope，避免运行时重复加入
+
+
 #2-1 择时模块-计算线性回归统计值
 #对输入的自变量每日最低价x(series)和因变量每日最高价y(series)建立OLS回归模型,返回元组(截距,斜率,拟合度)
 def get_ols(x, y):

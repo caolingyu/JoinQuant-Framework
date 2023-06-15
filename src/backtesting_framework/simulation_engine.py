@@ -91,7 +91,12 @@ def order_target_value(security, value):
         print("价值不能为负，已调整为0")
         value = 0
     today_data = get_today_data(security)
-    hold_value = context.portfolio.positions.get(security).total_amount * today_data['open'].values[0]
+    print(security)
+    try:
+        hold_value = context.portfolio.positions.get(security).total_amount * today_data['open'].values[0]
+    except:
+        context.portfolio.positions[security] = Position(security=security)
+        hold_value = hold_value = context.portfolio.positions.get(security).total_amount * today_data['open'].values[0]
     print('hold_value', hold_value)
     delta_value = value - hold_value
     print('delta_value', delta_value)
