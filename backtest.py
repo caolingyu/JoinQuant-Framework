@@ -54,8 +54,11 @@ def run():
         dt = np.datetime_as_string(dt).split('T')[0]  # 提取日期部分
         dt = datetime.datetime.strptime(dt, '%Y-%m-%d').date()
         context.dt = dt
-
-        handle_data(context)
+        try:
+            handle_data(context)
+        except:
+            print(f"skip {dt}")
+            continue
 
         # 计算手续费和滑点
         commission = 0
