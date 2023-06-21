@@ -180,3 +180,12 @@ def handle_data(context):
         adjust_position(context, check_out_list)
     else:
         pass
+
+
+def handle_data_daily(context):
+    check_out_list = get_rank()
+    today_stock = '今日自选股:{}'.format(check_out_list)
+    #获取综合择时信号
+    timing_signal = get_timing_signal(g.ref_stock)
+    today_signal = '今日择时信号:{}'.format(timing_signal)
+    return f"{today_stock} {timing_signal}"

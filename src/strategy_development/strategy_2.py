@@ -85,3 +85,24 @@ def handle_data(context):
         print(value)
         order_target_value(g.etf_pool[index], value) # 调整标的至目标权重
         index+=1
+
+    
+def handle_data_daily(context):
+    # end_date = context.previous_date
+    start_date = context.start_date
+    end_date = context.end_date
+    weights = run_optimization(g.etf_pool, start_date, end_date)
+    print("weights", weights)
+    if weights is None:
+        return
+    # total_value = context.portfolio.total_value # 获取总资产
+    index = 0
+    operation = ""
+    for w in weights:
+        # value = total_value * w # 确定每个标的的权重
+        # print(value)
+        # order_target_value(g.etf_pool[index], value) # 调整标的至目标权重
+        operation += f"{g.etf_pool[index]}: {w} \n"
+        index+=1
+    return operation
+
