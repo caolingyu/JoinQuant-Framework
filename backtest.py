@@ -5,7 +5,7 @@ import numpy as np
 import akshare as ak
 
 from src.backtesting_framework import *
-from src.strategy_development.strategy_2 import *
+from src.strategy_development.strategy import *
 from src.data_processing import *
 
 # 定义手续费和滑点
@@ -54,9 +54,12 @@ def run():
         dt = np.datetime_as_string(dt).split('T')[0]  # 提取日期部分
         dt = datetime.datetime.strptime(dt, '%Y-%m-%d').date()
         context.dt = dt
+
+        # handle_data(context)
+        print(dt)
         try:
             handle_data(context)
-        except:
+        except Exception as e:
             print(f"skip {dt}")
             continue
 
@@ -64,7 +67,10 @@ def run():
         commission = 0
         slippage = 0
         for stock, position in context.portfolio.positions.items():
-            today_data = get_today_data(stock)
+            try:
+                today_data = get_today_data(stock)
+            except:
+                today_data = []
             # 停牌
             if len(today_data) == 0:
                 # 停牌前一交易日股票价格
@@ -80,7 +86,10 @@ def run():
         value = context.portfolio.available_cash
         # 计算持仓价值
         for stock, position in context.portfolio.positions.items():
-            today_data = get_today_data(stock)
+            try:
+                today_data = get_today_data(stock)
+            except:
+                today_data = []
             # 停牌
             if len(today_data) == 0:
                 # 停牌前一交易日股票价格
