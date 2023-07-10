@@ -1,6 +1,5 @@
 import akshare as ak
 
-# 获取所有ETF的行情数据
 etf_real_time_df = ak.stock_zh_a_spot_em()
 etf_code_list = etf_real_time_df['代码'].tolist()
 etf_name_list = etf_real_time_df['名称'].tolist()
@@ -8,7 +7,6 @@ etf_name_list = etf_real_time_df['名称'].tolist()
 ema30_bullish_etfs = []
 
 for code, name in zip(etf_code_list, etf_name_list):
-    # 获取ETF的历史行情数据
     df = ak.stock_zh_a_hist(symbol=code, adjust='qfq').rename(
         columns={
             "日期": "date",
@@ -39,25 +37,38 @@ for code, name in zip(etf_code_list, etf_name_list):
         ):
             # 寻找本轮下跌的起点
             current_histogram = df['MACD_histogram'].iloc[-1]
-            start_index = df[df['MACD_histogram'] > 0].index.max() + 1
+            start_index = df[df['MACD_histogram'] > 0].last_valid_index() + 1
 
             # 判断是否为第三次下跌趋势的减弱
-            histogram_values = df['MACD_histogram'].iloc[start_index:]
-            if (
-                len(histogram_values) >= 3
-                and current_histogram > histogram_values.iloc[-2] > histogram_values.iloc[-3]
-                and current_histogram < 0
-            ):
-                ema30_bullish_etfs.append(name)
+            if start_index is not None:
+                histogram_values = df['MACD_histogram'].iloc[start_index:]
+                cnt = 0
+                last_valid = True
+                for value in histogram_values.diff():
+                    if value > 0 and last_valid:
+                        cnt += 1
+                        last_valid = False
+                    elif value > 0:
+                        continue
+                    elif value < 0 and not last_valid:
+                        last_valid = True
+                    else:
+                        continue
+                # if (
+                #     len(histogram_values) >= 4
+                #     and (histogram_values.diff() > 0).iloc[1:].sum() >= 2
+                # ):
+                if cnt >= 3:
+                    ema30_bullish_etfs.append(name)
                 
-print(ema30_bullish_etfs)
+# print(ema30_bullish_etfs)
 
 etf_real_time_df = ak.stock_zh_a_spot_em()
 etf_code_list = etf_real_time_df['代码'].tolist()
 etf_name_list = etf_real_time_df['名称'].tolist()
 
 etf_dict = dict(zip(etf_name_list, etf_code_list))
-print(etf_dict)
+# print(etf_dict)
 
 for item in ema30_bullish_etfs:
     print(item, etf_dict.get(item))
