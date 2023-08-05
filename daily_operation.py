@@ -1,4 +1,6 @@
 import os
+import codecs
+import json
 import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,6 +16,27 @@ from src.strategy_development.strategy_2 import *
 
 from src.data_processing import *
 
+
+import logging
+
+# 创建日志器
+logger = logging.getLogger(__name__)
+
+# 设置日志级别
+logger.setLevel(logging.DEBUG) 
+
+# 创建日志处理器并设置级别
+file_handler = logging.FileHandler('daily_operation.log')
+file_handler.setLevel(logging.DEBUG)
+
+# 创建日志格式化器
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter) 
+
+# 将处理器添加到日志器
+logger.addHandler(file_handler)
+
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -22,24 +45,6 @@ config = {
     'commission_rate': 2.5 / 10000,  # Commission rate
     'slippage': 0.01  # Slippage
 }
-
-# # Initialize function, set benchmark, etc.
-# def initialize(context):
-#     # Set '159919' as the benchmark
-#     set_bench_mark('159919')
-#     g.stock_pool = ['159919', '510500', '159915', '513100']
-#     g.stock_num = 1  # Buy the top stock_num stocks based on the score
-#     g.momentum_day = 29  # Latest momentum reference for the last momentum_day days
-
-#     # rsrs timing parameters
-#     g.ref_stock = '159919'  # Basic data for rsrs timing calculation using ref_stock
-#     g.N = 18  # Calculate the latest slope and R-squared based on the last N days
-#     g.M = 600  # Calculate the latest z-score based on the last M days
-#     g.score_threshold = 0.7  # rsrs z-score threshold
-#     # ma timing parameters
-#     g.mean_day = 20  # Calculate the closing price based on the last mean_day
-#     g.mean_diff_day = 3  # Calculate the initial closing price based on (mean_day + mean_diff_day) days ago with a window of mean_diff_day
-#     g.slope_series = initial_slope_series()[:-1]  # Exclude the slope for the first day of backtesting to avoid duplicate addition during runtime
 
 # Function to send a Bark notification
 def send_bark_notification(title, content):
@@ -51,15 +56,6 @@ def send_bark_notification(title, content):
     response = requests.get(bark_url, params=params)
     # You can add error handling for the response if needed
 
-# def handle_data_daily(context):
-#     check_out_list = get_rank()
-#     today_stock = '今日自选股:{}'.format(check_out_list)
-#     #获取综合择时信号
-#     timing_signal = get_timing_signal(g.ref_stock)
-#     today_signal = '今日择时信号:{}'.format(timing_signal)
-#     return f"{today_stock} {timing_signal}"
-
-# Main framework function
 def run():
     init_value = context.portfolio.available_cash
     initialize(context)
@@ -67,13 +63,12 @@ def run():
     today = datetime.date.today()
     dt = today.strftime('%Y-%m-%d')
     dt = datetime.datetime.strptime(dt, '%Y-%m-%d').date()
-    context.dt = dt
+    context.dt = str(dt)
 
     reminder_content = handle_data_daily(context)
 
-    # Example daily operation reminder
-    # if dt.weekday() < 5:  # Only execute on weekdays (Monday to Friday)
     reminder_title = '今日策略操作'
+    logger.info(f"{reminder_title} {reminder_content}")
     send_bark_notification(reminder_title, reminder_content)
 
 run()
