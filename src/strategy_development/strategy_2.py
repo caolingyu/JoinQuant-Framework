@@ -37,8 +37,14 @@ def initialize(context):
     # 黄金ETF：159934
 
     g.etf_pool = ['159934', '513100', '159915', '510880']
+    g.etf_dict = {
+        '159934': "黄金ETF",
+        '513100': "纳指100",
+        '159915': "创业板100",
+        '510880': "红利ETF"
+    }
     # run_monthly(trade, 1, '10:00') #每天运行确保即时捕捉动量变化
-
+    context.last_month = -1
 
 # 计算投资组合方差的函数
 def portfolio_variance(weights, cov_matrix):  # 定义投资组合方差函数
@@ -63,7 +69,7 @@ def optimize_portfolio(returns):  # 定义优化投资组合函数
 # 定义获取数据并调用优化函数的函数
 def run_optimization(stocks, start_date, end_date):
     # prices = get_price(stocks, count=250, end_date=end_date, frequency='daily', fields=['close'])['close']
-    prices = get_price(stocks, start_date=start_date, end_date=end_date, frequency='daily', fields=['close'])['close']
+    prices = get_price(stocks, start_date=None, count=250, end_date=end_date, frequency='daily', fields=['close'])['close']
 
     returns = prices.pct_change().dropna() # 计算收益率
     weights = optimize_portfolio(returns)
@@ -74,23 +80,45 @@ def handle_data(context):
     # end_date = context.previous_date
     start_date = context.start_date
     end_date = context.end_date
-    weights = run_optimization(g.etf_pool, start_date, end_date)
-    print("weights", weights)
-    if weights is None:
-        return
-    total_value = context.portfolio.total_value # 获取总资产
-    index = 0
-    for w in weights:
-        value = total_value * w # 确定每个标的的权重
-        print(value)
-        order_target_value(g.etf_pool[index], value) # 调整标的至目标权重
-        index+=1
+    # # 按周为频率调仓
+    # if context.dt.weekday() == 0:
+    #     weights = run_optimization(g.etf_pool, start_date, end_date)
+    #     print("weights", weights)
+    #     if weights is None:
+    #         return
+    #     total_value = context.portfolio.total_value # 获取总资产
+    #     index = 0
+    #     for w in weights:
+    #         value = total_value * w # 确定每个标的的权重
+    #         print(value)
+    #         order_target_value(g.etf_pool[index], value) # 调整标的至目标权重
+    #         index+=1
+
+    # 按月为频率调仓
+    if context.dt.month != context.last_month:
+        print(context.dt.month)
+        context.last_month = context.dt.month
+        
+        weights = run_optimization(g.etf_pool, start_date, end_date)
+        print("weights", weights)
+        if weights is None:
+            return
+        total_value = context.portfolio.total_value # 获取总资产
+        index = 0
+        for w in weights:
+            value = total_value * w # 确定每个标的的权重
+            print(value)
+            order_target_value(g.etf_pool[index], value) # 调整标的至目标权重
+            index+=1
+
 
     
 def handle_data_daily(context):
     # end_date = context.previous_date
     start_date = context.start_date
-    end_date = context.end_date
+    end_date = context.dt
+    print("start_date", start_date)
+    print("end_date", end_date)
     weights = run_optimization(g.etf_pool, start_date, end_date)
     print("weights", weights)
     if weights is None:
@@ -102,7 +130,7 @@ def handle_data_daily(context):
         # value = total_value * w # 确定每个标的的权重
         # print(value)
         # order_target_value(g.etf_pool[index], value) # 调整标的至目标权重
-        operation += f"{g.etf_pool[index]}: {w} \n"
+        operation += f"{g.etf_dict[g.etf_pool[index]]}: {round(w, 2)} \n"
         index+=1
     return operation
 

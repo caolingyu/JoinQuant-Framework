@@ -17,15 +17,13 @@ from src.data_processing import *
 
 
 
-
-
-
-
 # 设置基准
 def set_bench_mark(security):
     context.benchmark = security
 
 
+def set_benchmark(security):
+    context.benchmark = security
 
 
 # 买卖订单基础函数

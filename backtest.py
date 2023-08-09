@@ -5,46 +5,32 @@ import numpy as np
 import akshare as ak
 
 from src.backtesting_framework import *
-from src.strategy_development.strategy import *
+# from src.strategy_development.strategy_4 import *
+from config import STRATEGY_CONFIG
 from src.data_processing import *
 
 # 定义手续费和滑点
 config = {
-    'commission_rate': 3 / 10000,  # 手续费
-    'slippage': 0.001  # 滑点
+    'commission_rate': 2 / 10000,  # 手续费
+    'slippage': 0.002  # 滑点
 }
 
-# # 初始化函数，设定基准等等
-# def initialize(context):
-#     # 设定002624作为基准
-#     set_bench_mark('159919')
-#     # 510180 上证180
-#     # 159919 沪深300
-#     # 159922 中证500
-#     # 159915 创业板
-#     # 513100 纳指
-#     g.stock_pool = ['510180', '159915', '513100', '159922']
-#     g.stock_num = 1 #买入评分最高的前stock_num只股票
-#     g.momentum_day = 29 #最新动量参考最近momentum_day的
-
-#     #rsrs择时参数
-#     g.ref_stock = '159919' #用ref_stock做择时计算的基础数据
-#     g.N = 18 # 计算最新斜率slope，拟合度r2参考最近N天
-#     g.M = 600 # 计算最新标准分zscore，rsrs_score参考最近M天
-#     g.score_threshold = 0.7 # rsrs标准分指标阈值
-#     #ma择时参数
-#     g.mean_day = 20 #计算结束ma收盘价，参考最近mean_day
-#     g.mean_diff_day = 3 #计算初始ma收盘价，参考(mean_day + mean_diff_day)天前，窗口为mean_diff_day的一段时间
-#     g.slope_series = initial_slope_series()[:-1] # 除去回测第一天的slope，避免运行时重复加入
+def load_strategy(strategy_name):
+    module_path = STRATEGY_CONFIG.get(strategy_name)
+    if module_path:
+        strategy_module = __import__(module_path, fromlist=["*"])
+        return strategy_module  # 返回整个策略模块
+    else:
+        raise ValueError("Invalid strategy name")
 
 
 # 框架主体函数
-def run():
+def run(strategy):
     # 创建收益数据表
     plt_df = pd.DataFrame(index=pd.to_datetime(context.date_range), columns=['value'])
     # 初始资金
     init_value = context.portfolio.available_cash
-    initialize(context)
+    strategy.initialize(context)
     last_price = {}
     high_watermark = [init_value]
 
@@ -58,7 +44,7 @@ def run():
         # handle_data(context)
         print(dt)
         try:
-            handle_data(context)
+            strategy.handle_data(context)
         except Exception as e:
             print(f"skip {dt}")
             continue
@@ -154,5 +140,9 @@ def run():
     # 显示图形
     plt.show()
 
-run()
+
+if __name__ == "__main__":
+    selected_strategy = "strategy_1"  # 根据需要选择不同的策略名称
+    strategy = load_strategy(selected_strategy)
+    run(strategy)
 

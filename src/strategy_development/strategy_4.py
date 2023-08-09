@@ -1,43 +1,37 @@
-# 克隆自聚宽文章：https://www.joinquant.com/post/41718
-# 标题：多因子宽基ETF择时轮动改进版-高收益大资金低回撤
-# 作者：养家大哥
-
-# 标题：ETF动量轮动RSRS择时-V15.0，2023/3/23
-# 作者：养家大哥
-
-# 标题：动量ETF轮动RSRS择时-v16
-# 作者：杨德勇
-# v2 养家大哥的思路：
 # 趋势因子的特点是无法及时判断趋势的变向，往往趋势变向一段时间后才能跟上，
 # 巨大回撤往往就发生在这种时候。因此基于动量因子的一阶导数，衡量趋势的潜在变化速度，
 # 若变化速度过快则空仓，反之则按原计划操作。
 # 可以进一步发散，衡量动量因子的二阶导、三阶导等等，暂时只测试过一阶导，就是目前这个升级2版本。
 
 
-from jqdata import *
 import numpy as np
-from jqlib.technical_analysis import *
+# from jqlib.technical_analysis import *
+from src.backtesting_framework import *
+from src.strategy_development import *
+from src.data_processing import *
+
+
 
 #初始化函数 
 def initialize(context):
-    set_benchmark('399006.XSHE')
-    set_option('use_real_price', True)
-    set_option("avoid_future_data", True)  # 避免引入未来信息
-    set_slippage(FixedSlippage(0.001))
+    set_benchmark('159919')
+    # set_option('use_real_price', True)
+    # set_option("avoid_future_data", True)  # 避免引入未来信息
+    # set_slippage(FixedSlippage(0.001))
     #set_slippage(PriceRelatedSlippage(0.002))
-    set_order_cost(OrderCost(open_tax=0, close_tax=0.000, open_commission=0.0001, close_commission=0.0001, close_today_commission=0, min_commission=0),
-                   type='fund')
-    log.set_level('order', 'error')
+    # set_order_cost(OrderCost(open_tax=0, close_tax=0.000, open_commission=0.0001, close_commission=0.0001, close_today_commission=0, min_commission=0),
+    #                type='fund')
+    # log.set_level('order', 'error')
     g.stock_pool = [
         # ======== 大盘 ===================
-        '510300.XSHG', # 沪深300ETF
-        '510050.XSHG', # 上证50ETF
+        '159919', # 沪深300ETF
+        '510050', # 上证50ETF
         # '510180.XSHG', # 上证180 （用于替换上证50或沪深300，其与创业板有重合）
-        '159949.XSHE', # 创业板500 
+        '159915', # 创业板500 
         # '159915.XSHE', # 创业指数，替代创业500
         # '510500.XSHG', # 500ETF
         # '159915.XSHE', # 创业板 ETF
-        '159928.XSHE', # 中证消费ETF
+        '159689', # 中证消费ETF
         # '512120.XSHG', # 医药50ETF
         # '510880.XSHG', # 红利ETF
         # '512100.XSHG', # 中证1000
@@ -47,7 +41,7 @@ def initialize(context):
     
     g.stock_num = 1 #买入评分最高的前stock_num只股票
     g.momentum_day = 20 #最新动量参考最近momentum_day的
-    g.ref_stock = '000300.XSHG' #用ref_stock做择时计算的基础数据
+    g.ref_stock = '159919' #用ref_stock做择时计算的基础数据
     g.N = 18 # 计算最新斜率slope，拟合度r2参考最近N天
     g.M = 600 # 计算最新标准分zscore，rsrs_score参考最近M天(600)
     g.K = 8 # 计算 zscore 斜率的窗口大小
@@ -74,6 +68,26 @@ def initialize(context):
 
 # 初始化准备数据,除去回测第一天的slope,zscores
 def initial_slope_series():
+    """
+    Calculate the initial slope series.
+
+    This function calculates the initial slope series based on the following steps:
+    1. Get the length of the series, which is the sum of g.N, g.M, and g.K.
+    2. Retrieve the historical data for the reference stock using the 'attribute_history' function.
+       The data includes the 'high', 'low', and 'close' attributes.
+    3. Generate a list of slopes using the 'get_ols' function on subsets of the 'low' and 'high' data.
+       The subsets are of length g.N and are shifted by one position.
+    4. Extract the slopes and r-squared values from the list of multe_data tuples.
+    5. Calculate the zscores by multiplying the zscore of each slope with the corresponding r-squared value.
+       The zscore is obtained using the 'get_zscore' function.
+    6. Return a tuple containing the slopes and zscores.
+
+    Returns:
+    - slopes (list): A list of slopes calculated from the high and low data.
+      The length of the list is equal to length - g.N.
+    - zscores (list): A list of zscores calculated from the slopes and r-squared values.
+      The length of the list is equal to g.K.
+    """
     length = g.N+g.M+g.K
     data = attribute_history(g.ref_stock, length, '1d', ['high', 'low', 'close'])
     multe_data = [get_ols(data.low[i:i+g.N], data.high[i:i+g.N]) for i in range(length-g.N)]

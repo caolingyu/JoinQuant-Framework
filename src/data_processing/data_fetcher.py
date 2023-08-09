@@ -38,7 +38,7 @@ def ak_daily(security, start_date, end_date, fields=('open', 'close', 'high', 'l
 
 
 # 获取历史数据
-def attribute_history(security, count, fields=('open', 'close', 'high', 'low', 'volume')):
+def attribute_history(security, count, timeframe='1d', fields=('open', 'close', 'high', 'low', 'volume')):
     end_date = (context.dt - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
     start_date = trade_cal[(trade_cal['trade_date'] <= end_date)][-count:].iloc[0, :][
         'trade_date'].strftime('%Y-%m-%d')
@@ -54,6 +54,8 @@ def attribute_daterange_history(security, start_date, end_date, fields=('open', 
     time_array2 = time.strptime(end_date, '%Y-%m-%d')
     end_date = time.strftime('%Y%m%d', time_array2)
     df = ak_daily(security, start_date, end_date)
+    print(security)
+    # print(df['date'])
 
     return df[list(fields)]
 
