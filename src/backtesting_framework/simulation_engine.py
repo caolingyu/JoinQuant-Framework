@@ -100,3 +100,39 @@ def order_target_value(security, value):
     print('delta_value', delta_value)
 
     order_value(security, delta_value)
+
+
+import datetime
+
+# def run_daily(func, time, reference_security='000001.XSHE'):
+    
+#     def wrapper(context):
+#         now = context.current_dt.time()
+#         if now >= datetime.time(hour=9,minute=15) and now <= datetime.time(hour=15,minute=0):
+#             # 在交易时间内
+#             if time == 'every_bar':
+#                 # 每分钟运行
+#                 func(context)
+#             else:
+#                 # 指定时间运行
+#                 if now.strftime("%H:%M") == time:
+#                     func(context)
+#         else:
+#             # 不在交易时间内
+#             if time == 'every_bar':
+#                 pass 
+#             else:
+#                 # 规定时间已过,调用函数
+#                 func(context)
+    
+#     # 返回wrapper函数  
+#     return wrapper
+
+
+def run_daily(func, time, reference_security='159919'):
+    config = {
+        'func': func,
+        'time': time,
+        'reference_security': reference_security
+    }
+    context.run_daily_config.append(config)

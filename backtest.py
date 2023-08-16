@@ -41,6 +41,7 @@ def run(strategy):
         dt = np.datetime_as_string(dt).split('T')[0]  # 提取日期部分
         dt = datetime.datetime.strptime(dt, '%Y-%m-%d').date()
         context.dt = dt
+        context.current_dt = dt
 
         if not hasattr(strategy, 'handle_data'):
             # 没有handle_data,则是run_daily策略
@@ -58,15 +59,29 @@ def run(strategy):
                 # run_daily策略
                 print('dt', dt)
                 # 从8:00到17:00，每分钟遍历
-                start_time = time(8, 0)  # 设置开始时间为8:00
-                end_time = time(17, 0)   # 设置结束时间为17:00
+                start_time = datetime.time(8, 0)  # 设置开始时间为8:00
+                end_time = datetime.time(17, 0)   # 设置结束时间为17:00
                 interval = timedelta(minutes=1)  # 设置循环间隔为1分钟
                 current_time = start_time
                 while current_time <= end_time:
-                    print(current_time.strftime('%H:%M'))
-                    if current_time == datetime.time(*map(int,config['time'].split(':'))):
-                        config['func'](context)
-                    current_time = (datetime.combine(dt, current_time) + interval).time()
+                    for config in context.run_daily_config:
+                        # print('111', type(current_time.strftime('%H:%M:%S')))
+                        # print('222', type(datetime.time(*map(int, config['time'].split(':')))))
+                        if current_time == datetime.time(*map(int,config['time'].split(':'))):
+                            print('333')
+                            try:
+                                print(config['func'])
+                                config['func'](context)
+                            except Exception as e:
+                                print(e)
+                                continue
+                    minutes = current_time.minute + interval.total_seconds() // 60
+                    hours_added = int(minutes // 60)
+                    minutes_remaining = int(minutes % 60)
+                    current_time = time(
+                        int(current_time.hour + hours_added),
+                        minutes_remaining,
+                    )
                   
                 # for now in range(0, 24):
                 #     for config in context.run_daily_config:
