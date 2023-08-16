@@ -34,19 +34,54 @@ def run(strategy):
     last_price = {}
     high_watermark = [init_value]
 
-    
+
     # 模拟每个bar运行
     for dt in context.date_range:
+        
         dt = np.datetime_as_string(dt).split('T')[0]  # 提取日期部分
         dt = datetime.datetime.strptime(dt, '%Y-%m-%d').date()
         context.dt = dt
 
-        # handle_data(context)
-        print(dt)
+        if not hasattr(strategy, 'handle_data'):
+            # 没有handle_data,则是run_daily策略
+            is_run_daily = True 
+        else:
+            is_run_daily = False
+
+
+        print(dt, is_run_daily)
+        from datetime import time, timedelta
+
         try:
-            strategy.handle_data(context)
+            if is_run_daily:
+                # 在指定时间，运行指定函数
+                # run_daily策略
+                print('dt', dt)
+                # 从8:00到17:00，每分钟遍历
+                start_time = time(8, 0)  # 设置开始时间为8:00
+                end_time = time(17, 0)   # 设置结束时间为17:00
+                interval = timedelta(minutes=1)  # 设置循环间隔为1分钟
+                current_time = start_time
+                while current_time <= end_time:
+                    print(current_time.strftime('%H:%M'))
+                    if current_time == datetime.time(*map(int,config['time'].split(':'))):
+                        config['func'](context)
+                    current_time = (datetime.combine(dt, current_time) + interval).time()
+                  
+                # for now in range(0, 24):
+                #     for config in context.run_daily_config:
+                #         print("config", config)
+                #         print(datetime.time(*map(int,config['time'].split(':'))))
+                #         print("now", now)
+                #         # 指定运行时间
+                #         if now == datetime.time(*map(int,config['time'].split(':'))):
+                #             config['func'](context)
+            else:
+                # handle_data策略
+                strategy.handle_data(context)
+
         except Exception as e:
-            print(f"skip {dt}")
+            print(f"skip {dt}: {e}")
             continue
 
         # 计算手续费和滑点
@@ -90,11 +125,10 @@ def run(strategy):
         value -= commission + slippage
         plt_df.loc[dt, 'value'] = value
 
-    # 计算收益率
-    # 收益率 = (总价值 - 初始资金 - 手续费 - 滑点) / 初始资金
+    # 计算收益率：收益率 = (总价值 - 初始资金 - 手续费 - 滑点) / 初始资金
     plt_df['ratio'] = (plt_df['value'] - init_value - commission - slippage) / init_value
 
-    ## 计算基准收益率
+    # 计算基准收益率
     bm_df = attribute_daterange_history(context.benchmark, context.start_date, context.end_date)
     bm_init = bm_df['open'][0]
     plt_df['benckmark_ratio'] = (bm_df['open'] - bm_init) / bm_init
@@ -142,7 +176,7 @@ def run(strategy):
 
 
 if __name__ == "__main__":
-    selected_strategy = "strategy_1"  # 根据需要选择不同的策略名称
+    selected_strategy = "strategy_4"  # 根据需要选择不同的策略名称
     strategy = load_strategy(selected_strategy)
     run(strategy)
 
