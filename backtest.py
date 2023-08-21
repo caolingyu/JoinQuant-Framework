@@ -10,7 +10,7 @@ from config import STRATEGY_CONFIG
 from src.data_processing import *
 
 # 定义手续费和滑点
-config = {
+backtest_config = {
     'commission_rate': 2 / 10000,  # 手续费
     'slippage': 0.002  # 滑点
 }
@@ -51,7 +51,7 @@ def run(strategy):
 
 
         print(dt, is_run_daily)
-        from datetime import time, timedelta
+        from datetime import timedelta
 
         try:
             if is_run_daily:
@@ -116,8 +116,8 @@ def run(strategy):
                 # 存储为停牌前一交易日股票价格
                 last_price[stock] = p
                 # 计算手续费和滑点
-                commission += p * position.total_amount * config['commission_rate']
-                slippage += p * position.total_amount * config['slippage']
+                commission += p * position.total_amount * backtest_config['commission_rate']
+                slippage += p * position.total_amount * backtest_config['slippage']
 
         value = context.portfolio.available_cash
         # 计算持仓价值
@@ -191,7 +191,7 @@ def run(strategy):
 
 
 if __name__ == "__main__":
-    selected_strategy = "strategy_4"  # 根据需要选择不同的策略名称
+    selected_strategy = "strategy_2"  # 根据需要选择不同的策略名称
     strategy = load_strategy(selected_strategy)
     run(strategy)
 
