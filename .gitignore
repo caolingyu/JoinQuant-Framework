@@ -50,3 +50,6 @@ reports/
 img
 notebooks
 .env
+
+ARCHIVE
+notes.md
