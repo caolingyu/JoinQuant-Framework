@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import akshare as ak
 import requests
+import redis
 
 from dotenv import load_dotenv
 
@@ -55,6 +56,12 @@ def send_bark_notification(title, content):
     }
     response = requests.get(bark_url, params=params)
     # You can add error handling for the response if needed
+
+    # Connect to Redis
+    r = redis.Redis(host='localhost', port=6379, db=0)
+
+    # Publish message to Redis channel
+    r.publish('my-channel', f'{title}: {content}')
 
 def run():
     init_value = context.portfolio.available_cash
