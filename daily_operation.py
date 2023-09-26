@@ -57,11 +57,15 @@ def send_bark_notification(title, content):
     response = requests.get(bark_url, params=params)
     # You can add error handling for the response if needed
 
-    # Connect to Redis
-    r = redis.Redis(host='localhost', port=6379, db=0)
+    try:
+        # Connect to Redis
+        r = redis.Redis(host='localhost', port=6379, db=0)
 
-    # Publish message to Redis channel
-    r.publish('my-channel', f'{title}: {content}')
+        # Publish message to Redis channel
+        r.publish('my-channel', f'{title}: {content}')
+
+    except:
+        print("Error publishing message to Redis")
 
 def run():
     init_value = context.portfolio.available_cash
@@ -71,6 +75,7 @@ def run():
     dt = today.strftime('%Y-%m-%d')
     dt = datetime.datetime.strptime(dt, '%Y-%m-%d').date()
     context.dt = str(dt)
+    # context.dt = '2023-05-31'
 
     reminder_content = handle_data_daily(context)
 
