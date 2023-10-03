@@ -8,6 +8,7 @@ from scipy.optimize import minimize
 from src.backtesting_framework import *
 from src.strategy_development import *
 from src.data_processing import *
+from src.backtesting_framework.context import trade_cal
 
 
 #初始化函数 
@@ -33,15 +34,21 @@ def initialize(context):
     #     '513100.XSHG', #纳指100（海外资产）
     #     #'159915.XSHE', #创业板100（成长股，科技股，题材性，中小盘）
     #     '510880.XSHG', #红利ETF（价值股，蓝筹股，防御性，中大盘）
+    #      纳指ETF 159941
+
     # ]
     # 黄金ETF：159934
 
-    g.etf_pool = ['159934', '513100', '159915', '510880']
+    # g.etf_pool = ['159934', '513100', '159915', '510880']
+    g.etf_pool = ['159934', '159941', '510180']
+
     g.etf_dict = {
         '159934': "黄金ETF",
         '513100': "纳指100",
         '159915': "创业板100",
-        '510880': "红利ETF"
+        '510880': "红利ETF",
+        '159941': "纳指ETF",
+        '510180': '上证180'
     }
     # run_monthly(trade, 1, '10:00') #每天运行确保即时捕捉动量变化
     context.last_month = -1
@@ -69,12 +76,24 @@ def optimize_portfolio(returns):  # 定义优化投资组合函数
 # 定义获取数据并调用优化函数的函数
 def run_optimization(stocks, start_date, end_date):
     # prices = get_price(stocks, count=250, end_date=end_date, frequency='daily', fields=['close'])['close']
+    # 获取过去250个交易日的价格数据
     prices = get_price(stocks, start_date=None, count=250, end_date=end_date, frequency='daily', fields=['close'])['close']
 
     returns = prices.pct_change().dropna() # 计算收益率
     weights = optimize_portfolio(returns)
     return weights
     
+def is_first_trade_day(dt):
+    # 判断dt是否是每个月第一个交易日
+    # 定义 context.dt，作为要判断的日期
+    # context_dt = pd.to_datetime('2023-12-01')
+
+    # 判断 context.dt 是否为每个月的第一个交易日
+    trading_dates = trade_cal[(trade_cal['trade_date'].dt.year == dt.year) & (trade_cal['trade_date'].dt.month == dt.month)]['trade_date']
+    is_first_trading_day = dt == trading_dates.min()
+
+    return is_first_trading_day
+
 # 交易
 def handle_data(context):
     # end_date = context.previous_date
@@ -95,7 +114,9 @@ def handle_data(context):
     #         index+=1
 
     # 按月为频率调仓
-    if context.dt.month != context.last_month:
+    if is_first_trade_day(context.dt):
+    # if context.dt.month != context.last_month:
+        # TODO: 需要考虑当天是否为交易日
         print(context.dt.month)
         context.last_month = context.dt.month
         
